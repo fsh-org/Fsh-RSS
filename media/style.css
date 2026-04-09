@@ -1,0 +1,45 @@
+.modal-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+}
+hr {
+  border: 1px var(--bg-2) solid;
+  margin: 6px 0px;
+}
+.inline {
+  display: flex;
+  align-items: center;
+}
+.inline h1 {
+  flex: 1;
+  height: 40px;
+}
+nav {
+  height: 45px;
+}
+main {
+  display: flex;
+  height: calc(100dvh - 45px - 14px);
+}
+section {
+  flex: 1;
+  height: 100%;
+  overflow: hidden auto;
+}
+section img {
+  width: 100%;
+}
+time {
+  display: block;
+  font-size: 80%;
+  color: var(--text-2);
+}
+.small {
+  font-size: 80%;
+  color: var(--text-2);
+}
