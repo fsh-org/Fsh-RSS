@@ -61,10 +61,10 @@ time {
   margin: 0px auto;
   content-visibility: auto;
 }
-#posts p {
+#posts .desc {
+  display: block;
   max-height: 30ch;
   overflow: hidden auto;
-  text-overflow: ellipsis;
 }
 #posts img {
   display: block;

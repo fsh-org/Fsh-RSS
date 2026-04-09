@@ -84,6 +84,16 @@ function showFile(file) {
       return `<a href="${file.url}" target="_blank"><button>View File</button></a>`;
   }
 }
+function displayHtml(btn, idx) {
+  btn.remove();
+  document.querySelector(`p.desc[data-idx="${idx}"]`).outerHTML = `<iframe class="desc" data-idx="${idx}"></iframe>`;
+  let html = data[current].data.items[idx].description.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&amp;','&');
+  if (!(/<body .*?>/i).test(html)) html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
+  let iframe = document.querySelector(`iframe.desc[data-idx="${idx}"]`);
+  iframe.setAttribute('referrerpolicy', 'no-referrer');
+  iframe.setAttribute('sandbox', 'allow-popups');
+  iframe.srcdoc = html;
+}
 function show() {
   document.getElementById('info').innerHTML = `<b>${data[current].data.title}</b>
 ${data[current].data.description?`<p>${data[current].data.description}</p>`:''}
@@ -91,12 +101,13 @@ ${data[current].data.image?`<img src="${proxy?proxyUrl+encodeURIComponent(data[c
 ${data[current].data.updated?`<time>Updated: ${new Date(data[current].data.updated).toLocaleString()}</time>`:''}
 ${data[current].data.generator?`<span class="small">Generated with: ${data[current].data.generator}</span>`:''}
 ${data[current].data.copyright?`<span class="small">${data[current].data.copyright.includes('©')?'':'© '} ${data[current].data.copyright}</span>`:''}`;
-  document.getElementById('posts').innerHTML = data[current].data.items.map(item=>`<div>
+  document.getElementById('posts').innerHTML = data[current].data.items.map((item,i)=>`<div>
   ${item.title?`<b>${item.title}</b>`:''}
-  ${item.description?`<p>${item.description}</p>`:''}
+  ${item.description?`<p class="desc" data-idx="${i}">${item.description}</p>`:''}
   ${item.file?showFile(item.file):''}
   ${item.link?`<a href="${item.link}" target="_blank"><button>View</button></a>`:''}
   ${item.comments?`<a href="${item.comments}"><button>Comments</button></a>`:''}
+  ${(/&lt;[a-z][a-z0-9-]*(\s.*?)?&gt;/i).test(item.description)?`<button onclick="displayHtml(this, ${i})">Display HTML</button>`:''}
   ${item.source?`<p class="small">Source: <a href="${item.source.url}" target="_blank">${item.source.text}</a></p>`:''}
   ${item.credit?`<p class="small">Credit: ${item.credit}</p>`:''}
   ${item.published?`<time>${(new Date(item.published)).toLocaleString()}</time>`:''}
