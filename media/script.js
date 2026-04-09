@@ -1,12 +1,16 @@
+Split(['#settings','#posts','#info']);
+
 let proxy = false;
 let proxyUrl = 'https://api.fsh.plus/file?url=';
 let urls = ['https://rss.nytimes.com/services/xml/rss/nyt/World.xml'];
 let data = {};
 let current = urls[0];
+
 // Utils
 function parseRSS(con) {
   let parser = new DOMParser();
   con = parser.parseFromString(con, 'text/xml');
+  if (!con.querySelector('rss')) throw new Error('Invalid document');
   let data = {};
   data.version = con.querySelector('rss').getAttribute('version');
   if (!['2.0','0.91','0.92'].includes(data.version)) throw new Error('Unsupported version');
@@ -28,7 +32,7 @@ function parseRSS(con) {
   data.rating = con.querySelector('channel > rating')?.innerHTML;
   data.skip = { hours: [], days: [] };
   if (con.querySelector('channel > skipHours')) data.skip.hours = Array.from(con.querySelectorAll('channel > skipHours > hour')).map(h=>Number(h.innerHTML));
-  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipHours > day')).map(h=>h.innerHTML);
+  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipDays > day')).map(h=>h.innerHTML);
   // Items
   data.items = Array.from(con.querySelectorAll('channel > item')).map(item=>{
     let file = null;
@@ -74,8 +78,7 @@ function showFile(file) {
     case 'image':
     case 'audio':
     case 'video':
-      if (proxy) file.url = proxyUrl+encodeURIComponent(file.url);
-      return `<${file.type.split('/')[0].replace('age','g')} src="${file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
+      return `<${file.type.split('/')[0].replace('age','g')} src="${proxy ? proxyUrl+encodeURIComponent(file.url) : file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
     default:
       return `<a href="${file.url}" target="_blank"><button>View File</button></a>`;
   }
@@ -102,21 +105,23 @@ ${data[current].data.copyright?`<span class="small">${data[current].data.copyrig
 setInterval(()=>{
   for (let i=0; i<urls.length; i++) {
     if (data[urls[i]]&&!(data[urls[i]] instanceof Promise)&&data[urls[i]].expire>Date.now()) continue;
-    if (data[urls[i]] instanceof Promise) return;
+    if (data[urls[i]] instanceof Promise) continue;
     data[urls[i]] = fetch(proxy?proxyUrl+encodeURIComponent(urls[i]):urls[i]);
     data[urls[i]]
       .then(res=>res.text())
       .then(res=>{
         data[urls[i]] = {
           data: parseRSS(res),
-          expire: Date.now()+10000000
+          expire: Date.now()+(10 * 60 * 1000) // 10 min default
         };
         if (urls[i]===current) show();
       })
       .catch(err=>{
+        let time = (data[urls[i]].errtime||0);
         data[urls[i]] = {
           data: data[urls[i]]?.data,
-          expire: Date.now()+1000
+          expire: Date.now()+1000+(time*time*5*1000), // 1 sec, 6 sec, 21 sec, 46 sec...
+          errtime: time+1
         };
       })
     return;

@@ -11,6 +11,18 @@ hr {
   border: 1px var(--bg-2) solid;
   margin: 6px 0px;
 }
+
+.gutter {
+  user-select: none;
+  background-color: var(--bg-1);
+  background-repeat: no-repeat;
+  background-position: 50%;
+}
+.gutter.gutter-horizontal {
+  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+  cursor: col-resize;
+}
+
 .inline {
   display: flex;
   align-items: center;
@@ -19,6 +31,7 @@ hr {
   flex: 1;
   height: 40px;
 }
+
 nav {
   height: 45px;
 }
@@ -27,7 +40,6 @@ main {
   height: calc(100dvh - 45px - 14px);
 }
 section {
-  flex: 1;
   height: 100%;
   overflow: hidden auto;
 }
