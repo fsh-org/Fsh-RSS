@@ -1,4 +1,7 @@
-Split(['#settings','#posts','#info']);
+Split(['#settings', '#posts', '#info'], {
+  minSize: 0,
+  sizes: [25, 50, 25]
+});
 
 let proxy = false;
 let proxyUrl = 'https://api.fsh.plus/file?url=';
@@ -14,25 +17,23 @@ function parseRSS(con) {
   let data = {};
   data.version = con.querySelector('rss').getAttribute('version');
   if (!['2.0','0.91','0.92'].includes(data.version)) throw new Error('Unsupported version');
-  data.title = con.querySelector('channel > title').innerHTML;
-  data.description = con.querySelector('channel > description').innerHTML;
-  data.lang = con.querySelector('channel > language')?.innerHTML;
-  data.copyright = con.querySelector('channel > copyright')?.innerHTML;
-  data.published = con.querySelector('channel > pubDate')?.innerHTML;
-  data.updated = con.querySelector('channel > lastBuildDate')?.innerHTML;
-  data.generator = con.querySelector('channel > generator')?.innerHTML;
-  data.ttl = con.querySelector('channel > ttl')?.innerHTML;
+  data.title = con.querySelector('channel > title')?.textContent;
+  data.description = con.querySelector('channel > description')?.innerHTML;
+  data.lang = con.querySelector('channel > language')?.textContent;
+  data.copyright = con.querySelector('channel > copyright')?.textContent;
+  data.published = con.querySelector('channel > pubDate')?.textContent;
+  data.updated = con.querySelector('channel > lastBuildDate')?.textContent;
+  data.generator = con.querySelector('channel > generator')?.textContent;
+  data.ttl = con.querySelector('channel > ttl')?.textContent;
   data.image = null;
-  if (con.querySelector('channel > image')) {
-    data.image = {
-      url: con.querySelector('channel > image > url')?.innerHTML,
-      alt: con.querySelector('channel > image > title')?.innerHTML
-    };
-  }
+  if (con.querySelector('channel > image')) data.image = {
+    url: con.querySelector('channel > image > url')?.textContent,
+    alt: con.querySelector('channel > image > title')?.textContent
+  };
   data.rating = con.querySelector('channel > rating')?.innerHTML;
   data.skip = { hours: [], days: [] };
-  if (con.querySelector('channel > skipHours')) data.skip.hours = Array.from(con.querySelectorAll('channel > skipHours > hour')).map(h=>Number(h.innerHTML));
-  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipDays > day')).map(h=>h.innerHTML);
+  if (con.querySelector('channel > skipHours')) data.skip.hours = Array.from(con.querySelectorAll('channel > skipHours > hour')).map(h=>Number(h.textContent));
+  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipDays > day')).map(h=>h.textContent);
   // Items
   data.items = Array.from(con.querySelectorAll('channel > item')).map(item=>{
     let file = null;
@@ -51,24 +52,24 @@ function parseRSS(con) {
       file = {
         url: content.getAttribute('url'),
         type: (content.getAttribute('medium')??'image')+'/',
-        alt: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.innerHTML,
-        credit: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.innerHTML
+        alt: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.textContent,
+        credit: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.textContent
       }
     }
     return {
-      title: item.querySelector('title')?.innerHTML,
-      link: item.querySelector('link')?.innerHTML,
+      title: item.querySelector('title')?.textContent,
+      link: item.querySelector('link')?.textContent,
       description: item.querySelector('description')?.innerHTML,
-      author: item.querySelector('author')?.innerHTML,
-      comments: item.querySelector('comments')?.innerHTML,
-      guid: item.querySelector('guid')?.innerHTML,
-      published: item.querySelector('pubDate')?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.innerHTML,
+      author: item.querySelector('author')?.textContent,
+      comments: item.querySelector('comments')?.textContent,
+      guid: item.querySelector('guid')?.textContent,
+      published: item.querySelector('pubDate')?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.textContent,
       file,
       source: item.querySelector('source')?({
-        text: item.querySelector('source').innerHTML,
+        text: item.querySelector('source').textContent,
         url: item.querySelector('source').getAttribute('url')
       }):null,
-      credit: item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.innerHTML
+      credit: item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.textContent
     };
   });
   return data;

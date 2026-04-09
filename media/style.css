@@ -31,6 +31,10 @@ hr {
   flex: 1;
   height: 40px;
 }
+.small {
+  font-size: 80%;
+  color: var(--text-2);
+}
 
 nav {
   height: 45px;
@@ -51,7 +55,19 @@ time {
   font-size: 80%;
   color: var(--text-2);
 }
-.small {
-  font-size: 80%;
-  color: var(--text-2);
+
+#posts > div {
+  max-width: 60dvw;
+  margin: 0px auto;
+  content-visibility: auto;
+}
+#posts p {
+  max-height: 30ch;
+  overflow: hidden auto;
+  text-overflow: ellipsis;
+}
+#posts img {
+  display: block;
+  max-width: 50dvw;
+  margin: 0px auto;
 }
