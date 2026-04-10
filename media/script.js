@@ -3,13 +3,29 @@ Split(['#settings', '#posts', '#info'], {
   sizes: [25, 50, 25]
 });
 
-let proxy = false;
 let proxyUrl = 'https://api.fsh.plus/file?url=';
-let urls = ['https://rss.nytimes.com/services/xml/rss/nyt/World.xml'];
+let current = 0;
+let feeds = [
+  {
+    name: 'NYT News',
+    group: 'news',
+    url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
+    proxy: false
+  },
+  {
+    name: 'Rebane',
+    group: 'blog',
+    url: 'https://lyra.horse/blog/posts/index.xml',
+    proxy: true
+  }
+];
 let data = {};
-let current = urls[0];
 
 // Utils
+function removeTags(txt) {
+  if (!txt) return txt;
+  return txt.replaceAll(/<[^>]*>/g, '');
+}
 function parseRSS(con) {
   let parser = new DOMParser();
   con = parser.parseFromString(con, 'text/xml');
@@ -17,23 +33,23 @@ function parseRSS(con) {
   let data = {};
   data.version = con.querySelector('rss').getAttribute('version');
   if (!['2.0','0.91','0.92'].includes(data.version)) throw new Error('Unsupported version');
-  data.title = con.querySelector('channel > title')?.textContent;
+  data.title = removeTags(con.querySelector('channel > title')?.innerHTML);
   data.description = con.querySelector('channel > description')?.innerHTML;
-  data.lang = con.querySelector('channel > language')?.textContent;
-  data.copyright = con.querySelector('channel > copyright')?.textContent;
-  data.published = con.querySelector('channel > pubDate')?.textContent;
-  data.updated = con.querySelector('channel > lastBuildDate')?.textContent;
-  data.generator = con.querySelector('channel > generator')?.textContent;
-  data.ttl = con.querySelector('channel > ttl')?.textContent;
+  data.lang = removeTags(con.querySelector('channel > language')?.innerHTML);
+  data.copyright = removeTags(con.querySelector('channel > copyright')?.innerHTML);
+  data.published = removeTags(con.querySelector('channel > pubDate')?.innerHTML);
+  data.updated = removeTags(con.querySelector('channel > lastBuildDate')?.innerHTML);
+  data.generator = removeTags(con.querySelector('channel > generator')?.innerHTML);
+  data.ttl = removeTags(con.querySelector('channel > ttl')?.innerHTML);
   data.image = null;
   if (con.querySelector('channel > image')) data.image = {
-    url: con.querySelector('channel > image > url')?.textContent,
-    alt: con.querySelector('channel > image > title')?.textContent
+    url: con.querySelector('channel > image > url')?.innerHTML,
+    alt: removeTags(con.querySelector('channel > image > title')?.innerHTML)
   };
   data.rating = con.querySelector('channel > rating')?.innerHTML;
   data.skip = { hours: [], days: [] };
-  if (con.querySelector('channel > skipHours')) data.skip.hours = Array.from(con.querySelectorAll('channel > skipHours > hour')).map(h=>Number(h.textContent));
-  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipDays > day')).map(h=>h.textContent);
+  if (con.querySelector('channel > skipHours')) data.skip.hours = Array.from(con.querySelectorAll('channel > skipHours > hour')).map(h=>Number(h.innerHTML));
+  if (con.querySelector('channel > skipDays')) data.skip.days = Array.from(con.querySelectorAll('channel > skipDays > day')).map(h=>h.innerHTML);
   // Items
   data.items = Array.from(con.querySelectorAll('channel > item')).map(item=>{
     let file = null;
@@ -52,24 +68,24 @@ function parseRSS(con) {
       file = {
         url: content.getAttribute('url'),
         type: (content.getAttribute('medium')??'image')+'/',
-        alt: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.textContent,
-        credit: item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.textContent
+        alt: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.innerHTML),
+        credit: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.innerHTML)
       }
     }
     return {
-      title: item.querySelector('title')?.textContent,
-      link: item.querySelector('link')?.textContent,
+      title: removeTags(item.querySelector('title')?.innerHTML),
+      link: removeTags(item.querySelector('link')?.innerHTML),
       description: item.querySelector('description')?.innerHTML,
-      author: item.querySelector('author')?.textContent,
-      comments: item.querySelector('comments')?.textContent,
-      guid: item.querySelector('guid')?.textContent,
-      published: item.querySelector('pubDate')?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.textContent,
+      author: removeTags(item.querySelector('author')?.innerHTML),
+      comments: removeTags(item.querySelector('comments')?.innerHTML),
+      guid: removeTags(item.querySelector('guid')?.innerHTML),
+      published: removeTags(item.querySelector('pubDate')?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.innerHTML),
       file,
       source: item.querySelector('source')?({
-        text: item.querySelector('source').textContent,
+        text: removeTags(item.querySelector('source').innerHTML),
         url: item.querySelector('source').getAttribute('url')
       }):null,
-      credit: item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.textContent
+      credit: removeTags(item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.innerHTML)
     };
   });
   return data;
@@ -79,7 +95,7 @@ function showFile(file) {
     case 'image':
     case 'audio':
     case 'video':
-      return `<${file.type.split('/')[0].replace('age','g')} src="${proxy ? proxyUrl+encodeURIComponent(file.url) : file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
+      return `<${file.type.split('/')[0].replace('age','g')} src="${feeds[current].proxy?proxyUrl+encodeURIComponent(file.url):file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
     default:
       return `<a href="${file.url}" target="_blank"><button>View File</button></a>`;
   }
@@ -94,10 +110,11 @@ function displayHtml(btn, idx) {
   iframe.setAttribute('sandbox', 'allow-popups');
   iframe.srcdoc = html;
 }
+
 function show() {
   document.getElementById('info').innerHTML = `<b>${data[current].data.title}</b>
 ${data[current].data.description?`<p>${data[current].data.description}</p>`:''}
-${data[current].data.image?`<img src="${proxy?proxyUrl+encodeURIComponent(data[current].data.image.url):data[current].data.image.url}" alt="${data[current].data.image.alt}">`:''}
+${data[current].data.image?`<img src="${feeds[current].proxy?proxyUrl+encodeURIComponent(data[current].data.image.url):data[current].data.image.url}" alt="${data[current].data.image.alt}">`:''}
 ${data[current].data.updated?`<time>Updated: ${new Date(data[current].data.updated).toLocaleString()}</time>`:''}
 ${data[current].data.generator?`<span class="small">Generated with: ${data[current].data.generator}</span>`:''}
 ${data[current].data.copyright?`<span class="small">${data[current].data.copyright.includes('©')?'':'© '} ${data[current].data.copyright}</span>`:''}`;
@@ -113,25 +130,42 @@ ${data[current].data.copyright?`<span class="small">${data[current].data.copyrig
   ${item.published?`<time>${(new Date(item.published)).toLocaleString()}</time>`:''}
 </div>`).join('');
 }
+
+function showSettings() {
+  let groups = new Set();
+  feeds.forEach(feed=>groups.add(feed.group));
+  document.getElementById('settings').innerHTML = Array.from(groups)
+    .map(group=>`<label><input type="checkbox"> ${group}</label>
+<div data-parent="${group}">
+  ${feeds
+    .map((feed,i)=>{ feed.idx=i; return feed })
+    .filter(feed=>feed.group===group)
+    .map(feed=>`<button onclick="current=${feed.idx};show();">${feed.name}</button>`)
+    .join('')}
+</div>`)
+    .join('');
+}
+
 // Refresh data
 setInterval(()=>{
-  for (let i=0; i<urls.length; i++) {
-    if (data[urls[i]]&&!(data[urls[i]] instanceof Promise)&&data[urls[i]].expire>Date.now()) continue;
-    if (data[urls[i]] instanceof Promise) continue;
-    data[urls[i]] = fetch(proxy?proxyUrl+encodeURIComponent(urls[i]):urls[i]);
-    data[urls[i]]
+  for (let i=0; i<feeds.length; i++) {
+    if (data[feeds[i].url]&&!(data[feeds[i].url] instanceof Promise)&&data[feeds[i].url].expire>Date.now()) continue;
+    if (data[feeds[i].url] instanceof Promise) continue;
+    data[feeds[i].url] = fetch(feeds[i].proxy?proxyUrl+encodeURIComponent(feeds[i].url):feeds[i].url);
+    data[feeds[i].url]
       .then(res=>res.text())
       .then(res=>{
-        data[urls[i]] = {
-          data: parseRSS(res),
+        let rssdata = parseRSS(res);
+        data[feeds[i].url] = {
+          data: rssdata,
           expire: Date.now()+(10 * 60 * 1000) // 10 min default
         };
-        if (urls[i]===current) show();
+        if (i===current) show();
       })
       .catch(err=>{
-        let time = (data[urls[i]].errtime||0);
-        data[urls[i]] = {
-          data: data[urls[i]]?.data,
+        let time = (data[feeds[i].url].errtime||0);
+        data[feeds[i].url] = {
+          data: data[feeds[i].url]?.data,
           expire: Date.now()+1000+(time*time*5*1000), // 1 sec, 6 sec, 21 sec, 46 sec...
           errtime: time+1
         };
