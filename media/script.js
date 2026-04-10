@@ -103,7 +103,7 @@ function showFile(file) {
 function displayHtml(btn, idx) {
   btn.remove();
   document.querySelector(`p.desc[data-idx="${idx}"]`).outerHTML = `<iframe class="desc" data-idx="${idx}"></iframe>`;
-  let html = data[current].data.items[idx].description.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&amp;','&');
+  let html = data[feeds[current].url].data.items[idx].description.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&amp;','&');
   if (!(/<body .*?>/i).test(html)) html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
   let iframe = document.querySelector(`iframe.desc[data-idx="${idx}"]`);
   iframe.setAttribute('referrerpolicy', 'no-referrer');
@@ -112,13 +112,14 @@ function displayHtml(btn, idx) {
 }
 
 function show() {
-  document.getElementById('info').innerHTML = `<b>${data[current].data.title}</b>
-${data[current].data.description?`<p>${data[current].data.description}</p>`:''}
-${data[current].data.image?`<img src="${feeds[current].proxy?proxyUrl+encodeURIComponent(data[current].data.image.url):data[current].data.image.url}" alt="${data[current].data.image.alt}">`:''}
-${data[current].data.updated?`<time>Updated: ${new Date(data[current].data.updated).toLocaleString()}</time>`:''}
-${data[current].data.generator?`<span class="small">Generated with: ${data[current].data.generator}</span>`:''}
-${data[current].data.copyright?`<span class="small">${data[current].data.copyright.includes('©')?'':'© '} ${data[current].data.copyright}</span>`:''}`;
-  document.getElementById('posts').innerHTML = data[current].data.items.map((item,i)=>`<div>
+  let cur = data[feeds[current].url].data;
+  document.getElementById('info').innerHTML = `<b>${cur.title}</b>
+${cur.description?`<p>${cur.description}</p>`:''}
+${cur.image?`<img src="${feeds[current].proxy?proxyUrl+encodeURIComponent(cur.image.url):cur.image.url}" alt="${cur.image.alt}">`:''}
+${cur.updated?`<time>Updated: ${new Date(cur.updated).toLocaleString()}</time>`:''}
+${cur.generator?`<span class="small">Generated with: ${cur.generator}</span>`:''}
+${cur.copyright?`<span class="small">${cur.copyright.includes('©')?'':'© '} ${cur.copyright}</span>`:''}`;
+  document.getElementById('posts').innerHTML = cur.items.map((item,i)=>`<div>
   ${item.title?`<b>${item.title}</b>`:''}
   ${item.description?`<p class="desc" data-idx="${i}">${item.description}</p>`:''}
   ${item.file?showFile(item.file):''}
