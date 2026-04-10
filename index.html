@@ -4,11 +4,11 @@
     <title>Fsh RSS</title>
     <meta property="og:title" content="Fsh RSS">
     <meta name="twitter:title" content="Fsh RSS">
-    <meta name="description" content="Fsh RSS, .">
-    <meta property="og:description" content="Fsh Counter, .">
-    <meta name="twitter:description" content="Fsh Counter, .">
-    <link rel="canonical" href="https://counter.fsh.plus">
-    <meta property="og:url" content="https://counter.fsh.plus">
+    <meta name="description" content="Fsh RSS, in browser RSS multi feed viewer.">
+    <meta property="og:description" content="Fsh RSS, in browser RSS multi feed viewer.">
+    <meta name="twitter:description" content="Fsh RSS, in browser RSS multi feed viewer.">
+    <link rel="canonical" href="https://rss.fsh.plus">
+    <meta property="og:url" content="https://rss.fsh.plus">
     <!-- ------- -->
     <meta charset="UTF-8">
     <meta name="robots" content="index, follow">
@@ -35,7 +35,14 @@
     </nav>
     <hr>
     <main>
-      <section id="settings"></section>
+      <section id="settings">
+        <div class="inline">
+          <h2>Feeds</h2>
+          <button>+</button>
+        </div>
+        <strong><label><input type="checkbox"> All</label></strong><br>
+        <div class="list"></div>
+      </section>
       <section id="posts"></section>
       <section id="info"></section>
     </main>

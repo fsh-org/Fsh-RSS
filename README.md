@@ -1,6 +1,6 @@
 # Fsh RSS
 
-In browser RSS feed viewer.
+In browser RSS multi feed viewer.
 
 ## Features
 

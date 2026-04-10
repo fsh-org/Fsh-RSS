@@ -135,13 +135,13 @@ ${cur.copyright?`<span class="small">${cur.copyright.includes('©')?'':'© '} ${
 function showSettings() {
   let groups = new Set();
   feeds.forEach(feed=>groups.add(feed.group));
-  document.getElementById('settings').innerHTML = Array.from(groups)
-    .map(group=>`<label><input type="checkbox"> ${group}</label>
+  document.querySelector('#settings .list').innerHTML = Array.from(groups)
+    .map(group=>`<b><label><input type="checkbox"> ${group}</label></b>
 <div data-parent="${group}">
   ${feeds
     .map((feed,i)=>{ feed.idx=i; return feed })
     .filter(feed=>feed.group===group)
-    .map(feed=>`<button onclick="current=${feed.idx};show();">${feed.name}</button>`)
+    .map(feed=>`<label><input type="checkbox"> <button onclick="current=${feed.idx};show();">${feed.name}</button></label>`)
     .join('')}
 </div>`)
     .join('');
@@ -174,3 +174,5 @@ setInterval(()=>{
     return;
   }
 }, 1000);
+
+showSettings();

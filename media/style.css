@@ -27,8 +27,10 @@ hr {
   display: flex;
   align-items: center;
 }
-.inline h1 {
+.inline h1, .inline h2 {
   flex: 1;
+}
+.inline h1 {
   height: 40px;
 }
 .small {
@@ -54,6 +56,18 @@ time {
   display: block;
   font-size: 80%;
   color: var(--text-2);
+}
+
+#settings b {
+  display: block;
+  margin-left: 5px;
+  padding-left: 2px;
+  border-left: 3px var(--bg-3) solid;
+}
+#settings div {
+  margin-left: 5px;
+  padding-left: 10px;
+  border-left: 3px var(--bg-2) solid;
 }
 
 #posts > div {
