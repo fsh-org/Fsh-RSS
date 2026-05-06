@@ -146,6 +146,19 @@ function showSettings() {
 </div>`)
     .join('');
 }
+document.querySelector('#settings .inline button').onclick = ()=>{
+  let url = prompt('Url');
+  let name = prompt('name');
+  let group = prompt('group');
+  let proxy = prompt('proxy');
+  feeds.push({
+    name,
+    group,
+    url,
+    proxy: proxy=='true'
+  });
+  showSettings();
+};
 
 // Refresh data
 setInterval(()=>{
