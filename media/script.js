@@ -4,15 +4,16 @@ Split(['#settings', '#posts', '#info'], {
 });
 
 let proxyUrl = 'https://api.fsh.plus/file?url=';
-let current = 0;
 let feeds = [
   {
+    selected: true,
     name: 'NYT News',
     group: 'news',
     url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml',
     proxy: false
   },
   {
+    selected: false,
     name: 'Rebane',
     group: 'blog',
     url: 'https://lyra.horse/blog/posts/index.xml',
@@ -90,20 +91,26 @@ function parseRSS(con) {
   });
   return data;
 }
-function showFile(file) {
+function showFile(file, feed) {
+  let cur = feeds.find(fed=>fed.url===feed);
   switch(file.type.split('/')[0]) {
     case 'image':
     case 'audio':
     case 'video':
-      return `<${file.type.split('/')[0].replace('age','g')} src="${feeds[current].proxy?proxyUrl+encodeURIComponent(file.url):file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
+      return `<${file.type.split('/')[0].replace('age','g')} src="${cur.proxy?proxyUrl+encodeURIComponent(file.url):file.url}"${file.alt?` alt="${file.alt}"`:''} loading="lazy" controls></${file.type.split('/')[0].replace('age','g')}>${file.credit?`<br><span class="small">File by: ${file.credit}</span>`:''}<br>`.replace('</img>','');
     default:
       return `<a href="${file.url}" target="_blank"><button>View File</button></a>`;
   }
 }
-function displayHtml(btn, idx) {
+function displayHtml(btn, feed, idx) {
   btn.remove();
+  let html = feeds
+    .filter(feed=>feed.selected)
+    .map(feed=>data[feed.url].data.items)
+    .flat()
+    .toSorted((a,b)=>new Date(b.published)-new Date(a.published))
+    [idx].description.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&amp;','&');
   document.querySelector(`p.desc[data-idx="${idx}"]`).outerHTML = `<iframe class="desc" data-idx="${idx}"></iframe>`;
-  let html = data[feeds[current].url].data.items[idx].description.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&quot;','"').replaceAll('&amp;','&');
   if (!(/<body .*?>/i).test(html)) html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="color-scheme" content="dark light"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head><body>${html}</body></html>`;
   let iframe = document.querySelector(`iframe.desc[data-idx="${idx}"]`);
   iframe.setAttribute('referrerpolicy', 'no-referrer');
@@ -112,26 +119,57 @@ function displayHtml(btn, idx) {
 }
 
 function show() {
-  let cur = data[feeds[current].url].data;
-  document.getElementById('info').innerHTML = `<b>${cur.title}</b>
-${cur.description?`<p>${cur.description}</p>`:''}
-${cur.image?`<img src="${feeds[current].proxy?proxyUrl+encodeURIComponent(cur.image.url):cur.image.url}" alt="${cur.image.alt}">`:''}
-${cur.updated?`<time>Updated: ${new Date(cur.updated).toLocaleString()}</time>`:''}
-${cur.generator?`<span class="small">Generated with: ${cur.generator}</span>`:''}
-${cur.copyright?`<span class="small">${cur.copyright.includes('©')?'':'© '} ${cur.copyright}</span>`:''}`;
-  document.getElementById('posts').innerHTML = cur.items.map((item,i)=>`<div>
+  document.getElementById('info').innerHTML = feeds
+    .filter(feed=>feed.selected)
+    .map(feed=>{
+      let cur = data[feed.url].data;
+      return `<div>
+  <b>${cur.title}</b>
+  ${cur.description?`<p>${cur.description}</p>`:''}
+  ${cur.image?`<img src="${feed.proxy?proxyUrl+encodeURIComponent(cur.image.url):cur.image.url}" alt="${cur.image.alt}" loading="lazy">`:''}
+  ${cur.updated?`<time>Updated: ${new Date(cur.updated).toLocaleString()}</time>`:''}
+  ${cur.generator?`<span class="small">Generated with: ${cur.generator}</span>`:''}
+  ${cur.copyright?`<span class="small">${cur.copyright.includes('©')?'':'© '}${cur.copyright}</span>`:''}
+</div>`;
+    })
+    .join('');
+  document.getElementById('posts').innerHTML = feeds
+    .filter(feed=>feed.selected)
+    .map(feed=>data[feed.url].data.items.map(itm=>{itm.feed=feed.url;return itm}))
+    .flat()
+    .toSorted((a,b)=>new Date(b.published)-new Date(a.published))
+    .map((item,i)=>`<div>
   ${item.title?`<b>${item.title}</b>`:''}
   ${item.description?`<p class="desc" data-idx="${i}">${item.description}</p>`:''}
-  ${item.file?showFile(item.file):''}
+  ${item.file?showFile(item.file, item.feed):''}
   ${item.link?`<a href="${item.link}" target="_blank"><button>View</button></a>`:''}
   ${item.comments?`<a href="${item.comments}"><button>Comments</button></a>`:''}
-  ${(/&lt;[a-z][a-z0-9-]*(\s.*?)?&gt;/i).test(item.description)?`<button onclick="displayHtml(this, ${i})">Display HTML</button>`:''}
+  ${(/&lt;[a-z][a-z0-9-]*(\s.*?)?&gt;/i).test(item.description)?`<button onclick="displayHtml(this, '${encodeURIComponent(item.feed)}', ${i})">Display HTML</button>`:''}
   ${item.source?`<p class="small">Source: <a href="${item.source.url}" target="_blank">${item.source.text}</a></p>`:''}
   ${item.credit?`<p class="small">Credit: ${item.credit}</p>`:''}
   ${item.published?`<time>${(new Date(item.published)).toLocaleString()}</time>`:''}
-</div>`).join('');
+</div>`)
+    .join('');
 }
 
+window.focusFeed = (url)=>{
+  url = decodeURIComponent(url);
+  feeds = feeds.map(feed=>{
+    feed.selected = feed.url===url;
+    return feed;
+  });
+  show();
+  showSettings();
+};
+window.toggleFeed = (url, to)=>{
+  url = decodeURIComponent(url);
+  feeds = feeds.map(feed=>{
+    if (feed.url===url) feed.selected = to;
+    return feed;
+  });
+  show();
+  showSettings();
+};
 function showSettings() {
   let groups = new Set();
   feeds.forEach(feed=>groups.add(feed.group));
@@ -139,9 +177,8 @@ function showSettings() {
     .map(group=>`<b><label><input type="checkbox"> ${group}</label></b>
 <div data-parent="${group}">
   ${feeds
-    .map((feed,i)=>{ feed.idx=i; return feed })
     .filter(feed=>feed.group===group)
-    .map(feed=>`<label><input type="checkbox"> <button onclick="current=${feed.idx};show();">${feed.name}</button></label>`)
+    .map(feed=>`<label><input type="checkbox"${feed.selected?' checked':''} onchange="toggleFeed('${encodeURIComponent(feed.url)}', this.checked)"> <button onclick="focusFeed('${encodeURIComponent(feed.url)}')">${feed.name}</button></label>`)
     .join('')}
 </div>`)
     .join('');
@@ -152,6 +189,7 @@ document.querySelector('#settings .inline button').onclick = ()=>{
   let group = prompt('group');
   let proxy = prompt('proxy');
   feeds.push({
+    selected: true,
     name,
     group,
     url,
@@ -172,9 +210,9 @@ setInterval(()=>{
         let rssdata = parseRSS(res);
         data[feeds[i].url] = {
           data: rssdata,
-          expire: Date.now()+(10 * 60 * 1000) // 10 min default
+          expire: Date.now()+((rssdata.ttl||10) * 60*1000) // TTL or 10 min
         };
-        if (i===current) show();
+        if (feeds[i].selected) show();
       })
       .catch(err=>{
         let time = (data[feeds[i].url].errtime||0);

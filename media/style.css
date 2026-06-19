@@ -48,7 +48,7 @@ section {
   height: 100%;
   overflow: hidden auto;
 }
-section img {
+section img, #posts iframe {
   width: 100%;
 }
 time {
@@ -57,6 +57,9 @@ time {
   color: var(--text-2);
 }
 
+#settings button {
+  border: none;
+}
 #settings .list b {
   display: block;
   margin-left: 5px;
@@ -79,7 +82,7 @@ time {
   max-height: 30ch;
   overflow: hidden auto;
 }
-#posts img {
+#posts img, #posts iframe {
   display: block;
   max-width: 50dvw;
   margin: 0px auto;
