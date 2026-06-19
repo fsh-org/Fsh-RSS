@@ -26,6 +26,9 @@ hr {
   display: flex;
   align-items: center;
 }
+.inline a {
+  display: flex;
+}
 .inline h1, .inline h2 {
   flex: 1;
 }
