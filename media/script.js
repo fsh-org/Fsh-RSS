@@ -34,18 +34,18 @@ function parseRSS(con) {
   let data = {};
   data.version = con.querySelector('rss').getAttribute('version');
   if (!['2.0','0.91','0.92'].includes(data.version)) throw new Error('Unsupported version');
-  data.title = removeTags(con.querySelector('channel > title')?.innerHTML);
-  data.description = con.querySelector('channel > description')?.innerHTML;
-  data.lang = removeTags(con.querySelector('channel > language')?.innerHTML);
-  data.copyright = removeTags(con.querySelector('channel > copyright')?.innerHTML);
-  data.published = removeTags(con.querySelector('channel > pubDate')?.innerHTML);
-  data.updated = removeTags(con.querySelector('channel > lastBuildDate')?.innerHTML);
-  data.generator = removeTags(con.querySelector('channel > generator')?.innerHTML);
-  data.ttl = removeTags(con.querySelector('channel > ttl')?.innerHTML);
+  data.title = removeTags(con.querySelector('channel > title')?.textContent);
+  data.description = con.querySelector('channel > description')?.textContent;
+  data.lang = removeTags(con.querySelector('channel > language')?.textContent);
+  data.copyright = removeTags(con.querySelector('channel > copyright')?.textContent);
+  data.published = removeTags(con.querySelector('channel > pubDate')?.textContent);
+  data.updated = removeTags(con.querySelector('channel > lastBuildDate')?.textContent);
+  data.generator = removeTags(con.querySelector('channel > generator')?.textContent);
+  data.ttl = removeTags(con.querySelector('channel > ttl')?.textContent);
   data.image = null;
   if (con.querySelector('channel > image')) data.image = {
     url: con.querySelector('channel > image > url')?.innerHTML,
-    alt: removeTags(con.querySelector('channel > image > title')?.innerHTML)
+    alt: removeTags(con.querySelector('channel > image > title')?.textContent)
   };
   data.rating = con.querySelector('channel > rating')?.innerHTML;
   data.skip = { hours: [], days: [] };
@@ -69,24 +69,24 @@ function parseRSS(con) {
       file = {
         url: content.getAttribute('url'),
         type: (content.getAttribute('medium')??'image')+'/',
-        alt: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.innerHTML),
-        credit: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.innerHTML)
+        alt: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'description')[0]?.textContent),
+        credit: removeTags(item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'credit')[0]?.textContent)
       }
     }
     return {
-      title: removeTags(item.querySelector('title')?.innerHTML),
-      link: removeTags(item.querySelector('link')?.innerHTML),
-      description: item.querySelector('description')?.innerHTML,
-      author: removeTags(item.querySelector('author')?.innerHTML),
-      comments: removeTags(item.querySelector('comments')?.innerHTML),
-      guid: removeTags(item.querySelector('guid')?.innerHTML),
-      published: removeTags(item.querySelector('pubDate')?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.innerHTML),
+      title: removeTags(item.querySelector('title')?.textContent),
+      link: removeTags(item.querySelector('link')?.textContent),
+      description: item.querySelector('description')?.textContent,
+      author: removeTags(item.querySelector('author')?.textContent),
+      comments: removeTags(item.querySelector('comments')?.textContent),
+      guid: removeTags(item.querySelector('guid')?.textContent),
+      published: removeTags(item.querySelector('pubDate')?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'date')[0]?.textContent),
       file,
       source: item.querySelector('source')?({
-        text: removeTags(item.querySelector('source').innerHTML),
+        text: removeTags(item.querySelector('source').textContent),
         url: item.querySelector('source').getAttribute('url')
       }):null,
-      credit: removeTags(item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.innerHTML||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.innerHTML)
+      credit: removeTags(item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator')[0]?.textContent||item.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'rights')[0]?.textContent)
     };
   });
   return data;
